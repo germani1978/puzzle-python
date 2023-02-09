@@ -1,19 +1,18 @@
 import pandas as pd
 import random
-
+import json
 arr = []
 matriz = [] #primer elemnto son las x, despues las yWALL
 words = []
-words_horizontal = []
-words_vertical = []
 WALL = "&"
 SIZE = 12
 EMPTY = ""
 nWORDS = 5000
-used_words = []
+used_words = [] 
+resp = [] #array de json donde estan todas las palabras
 
 def cargar_palabras(): #carga 5000 palabras en arr. [english, spanish]
-    date = pd.read_csv('all_word.csv')
+    date = pd.read_csv('./data/all_word.csv')
     global arr
     arr = date.values
     
@@ -72,6 +71,8 @@ def put_word(id_word,x,y,horizontal): #coloca la palabra y una marca despues de 
     
     #coloca la palabra en matriz
     word = arr[id_word][0]
+    question = arr[id_word][1]
+    
     for i in range(len(word)):
         matriz[ x + dx*i ][ y + dy*i ] = word[i]
         
@@ -83,11 +84,16 @@ def put_word(id_word,x,y,horizontal): #coloca la palabra y una marca despues de 
         
     used_words[id_word] = True
         
-    if horizontal:
-        words_horizontal.append(id_word)
-    else:
-        words_vertical.append(id_word)
-
+    resp.append({
+        'word': word,
+        'question': question,
+        'orientacion': "H" if horizontal else 'V',
+        'cord':{
+            'x':x,
+            'y':y
+        }
+    })
+    
 def find_pos_word(id_word): #buscando una posicion para la palabra x
     for y in range(SIZE):
         for x in range(SIZE):
@@ -98,13 +104,20 @@ def find_pos_word(id_word): #buscando una posicion para la palabra x
                     put_word(id_word,x,y,False)
                     return True
     return False
+
+def to_file():
+    print('To file')
+    with open('./resp/resp.json',"w") as file:
+        json.dump(resp, file)
      
 def llena_puzzle(): #buscando palabras que quepan en el cruzigrama hasta que no haya mas espacio o queden n espacios
     global arr
     while n_empty() > 2 :
         id_word = random.randint(0,nWORDS-1)
-        find_pos_word(id_word)
+        if not used_words[id_word]:
+            find_pos_word(id_word)
     remove_empty()
+    to_file()
     
 if __name__ == "__main__":
     cargar_palabras()
